@@ -80,30 +80,22 @@ You can either use docker, but this would require setting up a role with appropr
 
 To run the Streamlit app directly:
 
-1. If you have activated a virtual env for deploying the cdk template, deactivate it:
-
-```
-deactivate
-```
-
-2. cd into the streamlit-docker directory, create a new virtual env, and install dependencies:
+1. cd into the streamlit-docker directory, create a new virtual env, and install dependencies:
 
 ```
 cd docker_app
-python -m venv .venv
-source .venv/bin/activate
 uv sync
 ```
 
-3. Launch the streamlit server
+2. Launch the streamlit server
 
 ```
-streamlit run app.py --server.port 8080
+uv run streamlit run app.py --server.port 8080
 ```
 
-4. Open `http://localhost:8080/` in your browser, your should see the app.
+3. Open `http://localhost:8080/` in your browser, your should see the app.
 
-5. You can now modify the streamlit app to build your own demo!
+4. You can now modify the streamlit app to build your own demo!
 
 ## Modify this sample to build your own agent
 
