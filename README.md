@@ -46,7 +46,7 @@ Prerequisites:
 
 To deploy:
 
-1. Edit `docker_app/config_file.py`, choose a `STACK_NAME` and a `CUSTOM_HEADER_VALUE`.
+1. Edit `docker_app/config_file.py`, choose a `STACK_NAME` and modify the deployment region to match your current AWS profile region
 
 > **Important:** If you want to activate authentication, don't forget to set `ENABLE_AUTH = True` in `docker_app/config_file.py`
 
