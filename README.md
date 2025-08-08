@@ -69,9 +69,30 @@ The deployment takes 5 to 10 minutes.
 Make a note of the output, in which you will find the CloudFront distribution URL
 and the Cognito user pool id.
 
-4. Create a user in the Cognito UserPool that has been created. You can perform this action from your AWS Console. For detailed instructions, please refer to [this blog post, section "Create an Amazon Cognito user"](https://aws.amazon.com/blogs/machine-learning/build-and-deploy-a-ui-for-your-generative-ai-applications-with-aws-and-python/).
-5. From your browser, connect to the CloudFront distribution url (the one you noted from the CDK output).
-6. Log in to the Streamlit app with the user you have created in Cognito.
+4. Deploy the container to ECR
+
+- Build the container
+
+```sh
+cd docker_app
+podman build -t tf-streamlit-strands-app-webapp -f Dockerfile
+```
+
+- Push the container to ECR
+
+```sh
+aws ecr get-login-password --region us-east-1 | podman login --username AWS --password-stdin 012345678901.dkr.ecr.us-east-1.amazonaws.com
+podman tag tf-streamlit-strands-app-webapp:latest 012345678901.dkr.ecr.us-east-1.amazonaws.com/tf-streamlit-strands-app-webapp:latest
+docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/tf-streamlit-strands-app-webapp:latest
+```
+
+- (Optional) Force a new deployment on ECS Service
+
+5. Create a user in the Cognito UserPool that has been created. You can perform this action from your AWS Console. For detailed instructions, please refer to [this blog post, section "Create an Amazon Cognito user"](https://aws.amazon.com/blogs/machine-learning/build-and-deploy-a-ui-for-your-generative-ai-applications-with-aws-and-python/).
+6. From your browser, connect to the CloudFront distribution url (the one you noted from the CDK output).
+7. Log in to the Streamlit app with the user you have created in Cognito.
+
+**NB: Using a Mac on Apple Silicon chips ? Use the Dockerfile.dev to develop evolutions of the container and test it locally**
 
 ## Testing and developing locally
 

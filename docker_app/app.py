@@ -18,7 +18,7 @@ if "messages" not in st.session_state:
 # ID of Secrets Manager containing cognito parameters
 secrets_manager_id = Config.SECRETS_MANAGER_ID
 
-# ID of the AWS region in which Secrets Manager is deployed
+# ID of the AWS regionin which Secrets Manager is deployed
 region = Config.DEPLOYMENT_REGION
 
 if Config.ENABLE_AUTH:
@@ -49,7 +49,7 @@ You have access to appointment management tools, a calculator, and can check the
 Always provide the appointment id so that I can update it if required"""
 
 model = BedrockModel(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    model_id=f"{region[0:2]}.anthropic.claude-3-7-sonnet-20250219-v1:0",
     max_tokens=64000,
     additional_request_fields={
         "thinking": {

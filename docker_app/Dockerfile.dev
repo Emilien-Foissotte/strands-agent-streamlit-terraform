@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.12
+FROM --platform=linux/arm64 python:3.12
 EXPOSE 8501
 WORKDIR /app
 ENV VIRTUAL_ENV=/opt/venv
