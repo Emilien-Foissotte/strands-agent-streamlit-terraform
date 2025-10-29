@@ -1,6 +1,10 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,pycharm,git,macos,terraform,windows,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,pycharm,git,macos,terraform,windows,python
 
+tf-streamlit-strands-app-assets.zip
+docker/appointments.db
+
+
 ### Git ###
 # Created by git for backups. To disable backups in Git:
 # $ git config --global mergetool.keepBackup false

@@ -10,4 +10,4 @@ class Config:
     DEPLOYMENT_REGION = "us-east-1"
 
     # Enable authentication
-    ENABLE_AUTH = False
+    ENABLE_AUTH = True

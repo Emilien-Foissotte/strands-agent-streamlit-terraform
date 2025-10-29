@@ -1,5 +1,6 @@
-FROM --platform=linux/amd64 python:3.12
+FROM public.ecr.aws/docker/library/python:3.12-slim
 EXPOSE 8501
+ENV PYTHONIOENCODING=UTF-8
 WORKDIR /app
 ENV VIRTUAL_ENV=/opt/venv
 ENV UV_PROJECT_ENVIRONMENT=$VIRTUAL_ENV
