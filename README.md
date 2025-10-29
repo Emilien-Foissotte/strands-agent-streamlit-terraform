@@ -5,11 +5,12 @@ This app demonstrates how to build and deploy a GenAI agent with a web user inte
 > It is based on the streamlit-template sample from this repo:
 > https://github.com/strands-agents/samples/04-UX-demos/01-streamlit-template/
 
-It can be used as a starting point to easily create and deploy a GenAI demo, with web interface and user authentication. It is written in python only, with cdk template to deploy on AWS.
+It can be used as a starting point to easily create and deploy a GenAI demo, with web interface and user authentication. It is written in python only, with terraform template to deploy on AWS.
 
 It deploys a basic Streamlit app, and contains the following components:
 
 - The Streamlit app in [Amazon Fargate](https://aws.amazon.com/fargate/) with [ECS](https://aws.amazon.com/ecs/), behind an [Application Load Balancer](https://aws.amazon.com/elasticloadbalancing/application-load-balancer/) and [Amazon CloudFront](https://aws.amazon.com/cloudfront/)
+- An [Eventbrigde](https://aws.amazon.com/eventbridge), [CodePipeline](https://aws.amazon.com/codepipeline), [CodeBuild](https://aws.amazon.com/codebuild) and [ECR](https://aws.amazon.com/ecr) repository to build and deploy the Streamlit app container.
 - An [Amazon Cognito](https://aws.amazon.com/cognito/) user pool in which you can manage users
 
 By default, the Streamlit app has the following features:
@@ -23,7 +24,7 @@ A version with streaming is also provided. See [here](#implement-streaming).
 
 ## Architecture diagram
 
-![Architecture diagram](img/archi_streamlit_cdk.png)
+![Architecture diagram](img/archi_streamlit_tf.png)
 
 ## Usage
 
@@ -33,14 +34,23 @@ In the docker_app folder, you will find the streamlit app. You can run it locall
 
 Note: for the docker version to run, you will need to give appropriate permissions to the container for bedrock access. This is not implemented yet.
 
-In the main folder, you will find a cdk template to deploy the app on ECS / ALB.
+In the main folder, you will find a terraform template to deploy the app on ECS / ALB.
 
 Prerequisites:
 
 - python >= 3.8 (tested on 3.12)
 - uv (tested on 0.5.25)
 - Docker installed / Podman (podman version 5.4.0)
-- `anthropic.claude-3-7-sonnet` model activated in Amazon Bedrock in your AWS account, in **each AWS region** of the Cross Region Inference profile. [Instructions](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
+- `anthropic.claude-3-7-sonnet` model activated in Amazon Bedrock in your AWS account. Open a playground interface in Bedrock console to activate it if you haven't done so already. For more information, see
+
+[Instructions](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html).
+
+Otherwise you might encouter this issue :
+
+```python
+botocore.errorfactory.ResourceNotFoundException: An error occurred (ResourceNotFoundException) when calling the ConverseStream operation: Model use case details have not been submitted for this account. Fill out the Anthropic use case details form before using the model. If you have already filled out the form, try again in 15 minutes.
+```
+
 - This demo has been tested on a Mac laptop with Podman as container runtime, but it should also work with other configurations.
 - You also need to install the AWS Command Line Interface (CLI) and to configure the AWS CLI on your development environment. One way to configure the AWS CLI is to get your access key through the AWS console, and use the `aws configure` command in your terminal to setup your credentials.
 
@@ -60,7 +70,7 @@ export AWS_PROFILE=your-profile
 
 ```
 terraform init
-terraformm plan
+terraform plan
 terraform apply
 ```
 
@@ -69,34 +79,15 @@ The deployment takes 5 to 10 minutes.
 Make a note of the output, in which you will find the CloudFront distribution URL
 and the Cognito user pool id.
 
-4. Deploy the container to ECR
-
-- Build the container
-
-```sh
-cd docker_app
-podman build -t tf-streamlit-strands-app-webapp -f Dockerfile
-```
-
-- Push the container to ECR
-
-```sh
-aws ecr get-login-password --region us-east-1 | podman login --username AWS --password-stdin 012345678901.dkr.ecr.us-east-1.amazonaws.com
-podman tag tf-streamlit-strands-app-webapp:latest 012345678901.dkr.ecr.us-east-1.amazonaws.com/tf-streamlit-strands-app-webapp:latest
-docker push 012345678901.dkr.ecr.us-east-1.amazonaws.com/tf-streamlit-strands-app-webapp:latest
-```
-
-- (Optional) Force a new deployment on ECS Service
+4. Check in AWS CodeBuild that the Docker build is successfull and ECS has finished deploying the docker app.
 
 5. Create a user in the Cognito UserPool that has been created. You can perform this action from your AWS Console. For detailed instructions, please refer to [this blog post, section "Create an Amazon Cognito user"](https://aws.amazon.com/blogs/machine-learning/build-and-deploy-a-ui-for-your-generative-ai-applications-with-aws-and-python/).
-6. From your browser, connect to the CloudFront distribution url (the one you noted from the CDK output).
+6. From your browser, connect to the CloudFront distribution url (the one you noted from the TF output).
 7. Log in to the Streamlit app with the user you have created in Cognito.
-
-**NB: Using a Mac on Apple Silicon chips ? Use the Dockerfile.dev to develop evolutions of the container and test it locally**
 
 ## Testing and developing locally
 
-After deployment of the cdk template containing the Cognito user pool required for authentication, you can test the Streamlit app directly on your laptop.
+After deployment of the terraform template containing the Cognito user pool required for authentication, you can test the Streamlit app directly on your laptop.
 You can either use docker, but this would require setting up a role with appropriate permissions, or run the Streamlit app directly in your terminal after having installed the required python dependencies.
 
 To run the Streamlit app directly:
@@ -125,6 +116,16 @@ To build your own agent, edit the `docker_app/app.py` file. The key areas you'll
 1. The agent configuration - Look for the `agent = Agent(...)` initialization
 2. The UI elements defined using Streamlit components
 
+## Deploy your modified app
+
+![img](img/archi_streamlit_tf_deployment_pipeline.png)
+
+To deploy your modified application with a Green/Blue deployment strategy, follow these steps:
+
+1. Save all your docker_app changes and ensure everything is committed to your version control system.
+2. Update the version in the `main.tf` file to trigger a new build.
+3. Run a `terraform apply` in the main directory. This will initiate a new build and deployment process using AWS CodePipeline and CodeBuild.
+
 ## Implement streaming
 
 A version with streaming is also provided. Streaming means you'll see the response appear gradually as it's being generated, instead of waiting for the complete response to show up all at once.
@@ -137,6 +138,52 @@ Alternatively, if you run it locally, you can directly run the streaming version
 
 ```
 streamlit run app_streaming.py --server.port 8080
+```
+
+# Database documentation
+
+> Generated using [drawdb](https://www.drawdb.app/editor)
+
+## Summary
+
+- [Introduction](#introduction)
+- [Database Type](#database-type)
+- [Table Structure](#table-structure)
+  - [appointments](#appointments)
+- [Relationships](#relationships)
+- [Database Diagram](#database-diagram)
+
+## Introduction
+
+## Database type
+
+- **Database system:** SQLite
+
+## Table structure
+
+### appointments
+
+| Name            | Type | Settings    | References | Note |
+| --------------- | ---- | ----------- | ---------- | ---- |
+| **id**          | TEXT | 🔑 PK, null |            |      |
+| **date**        | TEXT | null        |            |      |
+| **location**    | TEXT | null        |            |      |
+| **title**       | TEXT | null        |            |      |
+| **description** | TEXT | null        |            |      |
+
+## Relationships
+
+## Database Diagram
+
+```mermaid
+erDiagram
+	appointments {
+		TEXT id
+		TEXT date
+		TEXT location
+		TEXT title
+		TEXT description
+	}
 ```
 
 ## Agent description
